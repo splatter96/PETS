@@ -4,6 +4,8 @@ from torch.utils import data
 import numpy as np
 from tqdm import tqdm
 
+import time
+
 class DataGenerator(object):
     def __init__(self, args, env, device, mpc_policy, random_policy, max_size=1000000, split=0.8):
         """
@@ -47,8 +49,12 @@ class DataGenerator(object):
                     if is_render:
                         self.env.render()
 
+                    start = time.time()
                     action = policy.do_control(observation)
-                    new_observation, reward, done, _ = self.env.step(action)
+                    end = time.time()
+                    # print(f"Took {end-start} to calcualte action")
+                    # new_observation, reward, done, _ = self.env.step(action)
+                    new_observation, reward, done, _, _ = self.env.step(action)
                     new_observation = new_observation.astype(np.float32)
 
                     episode.append((observation, action, new_observation, reward))
@@ -102,9 +108,9 @@ class DataGenerator(object):
 
         self.statistics = {
             'ob_mean' : obs_torch.mean(dim=0),
-            'ob_std' : obs_torch.std(dim=0),
+            'ob_std' : obs_torch.std(dim=0) + 1e-6,
             'delta_mean' : deltas_torch.mean(dim=0),
-            'delta_std' : deltas_torch.std(dim=0)
+            'delta_std' : deltas_torch.std(dim=0) + 1e-6
         }
 
     def get_all_episodes(self):

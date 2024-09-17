@@ -41,7 +41,7 @@ class DNN(nn.Module):
             # use the swish-1 / silu activation function like PETS paper
             x = nn_utils.silu(self.layers[i](x))
         normalized_deltas = self.layers[len(self.layers) - 1](x)
-        
+
         # The MPC needs the unnormalized deltas to compute the predictions 
         deltas = nn_utils.unnormalize_deltas(normalized_deltas, self.statistics)
         return deltas, normalized_deltas 

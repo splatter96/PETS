@@ -4,7 +4,8 @@ import pdb
 import time
 from collections import OrderedDict
 
-import gym
+# import gym
+import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -14,10 +15,14 @@ import utils.nn_utils as nn_utils
 from data_generator import DataGenerator
 from env_config.CartPoleConfig import CartPoleConfig
 from env_config.PendulumConfig import PendulumConfig
+from env_config.MergeEnvConfig import MergeEnvConfig
 from logger import Logger
 from policies import MPCPolicy, RandomPolicy
 from utils.ensemble import Ensemble
 from utils.PNN import PNN
+
+import sys
+import highway_env
 
 
 def MPE(env, current_episodes, model, horizon, plot=True, label=None, max_frames=500):
@@ -112,7 +117,11 @@ def get_reward_function(env):
     elif name == 'InvertedPendulumSwingupPyBulletEnv-v0':
         # cos(theta)^2 * sign(cos(theta))
         return lambda state, _: state[:, 2] ** 3 - 0.8 * state[:, 0] ** 2
+    elif name == 'merge-single-agent-v0':
+        # raise NotImplementedError('Need my own config')
+        return MergeEnvConfig.get_reward
     else:
+        print(name)
         raise NotImplementedError('Reward function is not implemented for the given environment')
 
 
@@ -126,13 +135,27 @@ def main(args, logdir):
         b) Retrain the model using the new data and the old data
         c) (Optional) Compute Mean Prediction Error
     """
-
     # SETUP
     train_envs = []
     test_envs = []
     if args.no_sunblaze:
         train_env = gym.make(args.env_name)
         test_env = gym.make(args.env_name)
+
+        train_env.config["screen_height"] = 300
+        train_env.config["screen_width"] = 2800
+        train_env.config["safety_guarantee"] = False
+        train_env.config["traffic_density"] = 1
+        train_env.config["observation"]["normalize"] = False
+
+        test_env.config["screen_height"] = 300
+        test_env.config["screen_width"] = 2800
+        test_env.config["safety_guarantee"] = False
+        test_env.config["traffic_density"] = 1
+        test_env.config["observation"]["normalize"] = False
+
+        train_envs.append(train_env)
+        test_envs.append(test_env)
 
         if 'PyBullet' in args.env_name and args.render:
             train_env.render()
