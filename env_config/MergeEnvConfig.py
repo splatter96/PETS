@@ -32,6 +32,9 @@ class MergeEnvConfig:
   def get_reward(obs, action):
    combined_reward = []
 
+   obs = obs.cpu()
+   action = action.cpu()
+
    #only for testing here!!
    # obs = np.array(obs).flatten()
    # obs = obs[np.newaxis, ...]
@@ -113,5 +116,5 @@ class MergeEnvConfig:
 
        combined_reward.append(reward)
 
-   return np.array(combined_reward)
+   return torch.from_numpy(np.array(combined_reward)).float().to(TORCH_DEVICE)
 
