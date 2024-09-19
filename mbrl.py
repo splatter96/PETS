@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
+import sys
+sys.path.append("./MARL_CAVs/highway-env")
+import highway_env
+
 import sunblaze_envs
 import utils.nn_utils as nn_utils
 from data_generator import DataGenerator
@@ -20,9 +24,6 @@ from logger import Logger
 from policies import MPCPolicy, RandomPolicy
 from utils.ensemble import Ensemble
 from utils.PNN import PNN
-
-import sys
-import highway_env
 
 
 def MPE(env, current_episodes, model, horizon, plot=True, label=None, max_frames=500):
@@ -93,6 +94,10 @@ def get_success_function(env):
     elif 'Pendulum' in name:
         # not actually used
         return lambda final_time_step: final_time_step < 200
+    elif 'merge' in name:
+        # not actually used
+        return lambda final_time_step: final_time_step < 200
+
 
 
 def get_reward_function(env):
@@ -206,6 +211,9 @@ def main(args, logdir):
             # If weights are given, visualize and quit
             ensemble.load_weights(args.weights_paths)
 
+            current_episodes, train_rewards, train_lengths = data_generator.generate_random_data()
+            ensemble.set_statistics(data_generator.statistics)
+
             current_episodes, rewards, lengths = data_generator.generate_closed_loop_data(args.render)
             if args.mpe:
                 MPE(train_env, current_episodes, ensemble, args.mpc_horizon, label='Ensemble %s' % (args.weights_paths))
@@ -289,7 +297,7 @@ def run_test_episode(env, policy, success_function, render):
         if render:
             env.render()
         action = policy.do_control(observation)
-        new_observation, reward, done, _ = env.step(action)
+        new_observation, reward, done, _, _ = env.step(action)
         new_observation = new_observation.astype(np.float32)
         rewards.append(reward)
         observation = new_observation
@@ -382,7 +390,7 @@ if __name__ == "__main__":
 
     logdir_prefix = 'mb_'
 
-    data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data')
+    data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
     if not (os.path.exists(data_path)):
         os.makedirs(data_path)

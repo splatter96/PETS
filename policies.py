@@ -51,7 +51,7 @@ class MPCPolicy(object):
 
         # TODO: incorporate low and high into the sampling
         # TODO: move this functional
-        if "CartPole" in self.args.env_name:
+        if "CartPole" in self.args.env_name or "merge-single-agent" in self.args.env_name:
             actions = torch.FloatTensor(
                size=(self.args.mpc_samples,
                      self.args.mpc_horizon, 1)).random_(0, self.ac_dim).to(self.device)
@@ -87,10 +87,7 @@ class MPCPolicy(object):
                 # predict next states
                 pred = self.ensemble.predict(last_state, actions[:, t, :])
                 last_state += pred
-                start = time.time()
                 rewards += (self.args.gamma**t) * self.reward_function(last_state, actions[:, t, :])
-                end = time.time()
-                print(f"Took {end-start}s")
 
         best_act_seq = actions[torch.argmax(rewards)]
         best_first_act = best_act_seq[0]

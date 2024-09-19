@@ -31,8 +31,13 @@ class MergeEnvConfig:
   @staticmethod
   def get_reward(obs, action):
 
+   #retval = torch.full((obs.shape[0],),1.0, device=TORCH_DEVICE)
+   #print(retval.shape)
+   #return retval
+
    obs = obs.cpu()
-   # action = action.cpu()
+   action = action.cpu()
+   #action = action.to(TORCH_DEVICE)
 
    #only for testing here!!
    # obs = np.array(obs).flatten()
@@ -102,16 +107,30 @@ class MergeEnvConfig:
              + HEADWAY_COST * (Headway_cost if Headway_cost < 0 else 0) \
              + offramp_cost
 
+   #if reward < -200:
+        #print(f"{COLLISION_REWARD * (-1 * vehicle_crashed)}")
+        #print(f"high speed {(HIGH_SPEED_REWARD * np.clip(scaled_speed, 0, 1))}")
+        #print(f"merge_lane {MERGING_LANE_COST * Merging_lane_cost}")
+        #print(f"headway {HEADWAY_COST * (Headway_cost if Headway_cost < 0 else 0)}")
+        #print(f"offramp {offramp_cost}")
+        #print("\n\n")
+
    combined_reward = np.full(obs.shape[0], reward)
 
    #parallel evaluation of Lane_change_cost
    action_discrete = torch.argmax(action, dim=1)
    Lane_change_cost = torch.where((action_discrete == 0) | (action_discrete == 2), -LANE_CHANGE_COST, 0.0)
 
+   #print(combined_reward)
+   #print(Lane_change_cost)
+   #print(action)
+   #print(action_discrete)
    # combine parallel and sequentiall evaluated rewards
-   combined_reward = torch.from_numpy(combined_reward)
-   combined_reward += Lane_change_cost
+   #combined_reward = torch.from_numpy(combined_reward).float().to(TORCH_DEVICE)
+   #combined_reward += Lane_change_cost.float().to(TORCH_DEVICE)
+   combined_reward += Lane_change_cost.numpy()
 
-   # return combined_reward
-   return combined_reward.float().to(TORCH_DEVICE)
+   #return combined_reward
+   retval = torch.from_numpy(combined_reward).to(TORCH_DEVICE)
+   return retval
 
